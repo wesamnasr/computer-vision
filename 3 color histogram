@@ -1,0 +1,50 @@
+#include<iostream>
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
+#include<opencv2/imgproc.hpp>
+#include<vector>
+using namespace std;
+using namespace cv;
+int main()
+{
+
+	string image_path = "/Users/left_hart.jpg";
+
+	Mat image = imread(image_path, IMREAD_COLOR);
+	resize(image, image, { 500,500 }, 0, 0, 1);
+	vector<Mat>bgr_planes;
+	split(image, bgr_planes);
+
+	int hs = 256;
+	float rng[] = { 0,256 };
+	const float* hr = { rng };
+	bool uni = 1, acc = 0;
+	Mat b_h, g_h, r_h;
+
+	calcHist(&bgr_planes[0], 1, 0, Mat(), b_h, 1, &hs, &hr, uni, acc);
+	calcHist(&bgr_planes[1], 1, 0, Mat(), g_h, 1, &hs, &hr, uni, acc);
+	calcHist(&bgr_planes[2], 1, 0, Mat(), r_h, 1, &hs, &hr, uni, acc);
+
+	int hist_w = 512, hist_h = 400;
+	int bin_w = cvRound((double)hist_w / hs);
+	Mat histimage(hist_h, hist_w, CV_8UC3, Scalar(0, 0, 0));
+
+	normalize(b_h, b_h, 0, histimage.rows, NORM_MINMAX, -1, Mat());
+	normalize(g_h, g_h, 0, histimage.rows, NORM_MINMAX, -1, Mat());
+	normalize(r_h, r_h, 0, histimage.rows, NORM_MINMAX, -1, Mat());
+
+	for (int i = 1; i < hs; i++)
+	{
+		line(histimage, Point(bin_w * (i - 1), hist_h - cvRound(b_h.at<float>(i - 1))), Point(bin_w * (i), hist_h - cvRound(b_h.at<float>(i))), Scalar(255, 0, 0), 2, 8, 0);
+		line(histimage, Point(bin_w * (i - 1), hist_h - cvRound(g_h.at<float>(i - 1))), Point(bin_w * (i), hist_h - cvRound(g_h.at<float>(i))), Scalar(0, 255, 0), 2, 8, 0);
+		line(histimage, Point(bin_w * (i - 1), hist_h - cvRound(r_h.at<float>(i - 1))), Point(bin_w * (i), hist_h - cvRound(r_h.at<float>(i))), Scalar(0, 0, 255), 2, 8, 0);
+
+	}
+
+
+	imshow("aa", image);
+	imshow("his", histimage);
+	waitKey(0);
+	return 0;
+
+}
